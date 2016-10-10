@@ -3,6 +3,7 @@ module Lita
     class StepQuestions
       class Base
         attr_accessor :index
+
         class << self
           def step(name, label: name.to_s.gsub('_', ' ').capitalize, validate: false, multi_line: false, example: false, options: false)
             @steps ||= []
@@ -37,7 +38,7 @@ module Lita
         end
 
         def start
-          @message.reply 'This is multiple question. If you want to abort, just say "abort".'
+          @message.reply self.start_message
           @message.reply self.class.steps.first[:label] + ':'
           named_redis.set([@user.id, 'question_class'].join(':'), self.class.name)
           named_redis.set([@user.id, 'index'].join(':'), -1)
@@ -78,7 +79,7 @@ module Lita
           save(@current_answer)
 
           if self.class.steps.size == (@index + 1)
-            response.reply 'OK. Done all questions'
+            response.reply self.finish_message
           end
           true
         end
@@ -121,6 +122,14 @@ module Lita
 
         def save(data)
           # implement in subclass
+        end
+
+        def start_message
+          'This is multiple question. If you want to abort, just say "abort".'
+        end
+
+        def finish_message
+          'OK. Done all questions'
         end
 
         private
