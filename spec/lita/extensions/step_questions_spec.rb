@@ -8,9 +8,23 @@ class PizzaOrderQuestion < Lita::Extensions::StepQuestions::Base
   step :comment, multi_line: true
 end
 
+class OriginalMessageQuestion < Lita::Extensions::StepQuestions::Base
+  step :one
+  step :two
+
+  def start_message
+    'It is start message'
+  end
+
+  def finish_message
+    'It is finish message'
+  end
+end
+
 class PizzaOrderHandler < Lita::Handler
   route(/^order$/, :order, command: true, multi_question: PizzaOrderQuestion)
   route(/^menu$/, :menu, command: true)
+  route(/^message$/, :message, command: true, multi_question: OriginalMessageQuestion)
 
   def menu(response)
     menus = "tomato teriyaki ebi-mayo"
@@ -20,12 +34,17 @@ class PizzaOrderHandler < Lita::Handler
   def order(response)
     # nothing
   end
+
+  def message(response)
+    # nothing
+  end
 end
 
 describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
   before do
     registry.register_hook(:validate_route, Lita::Extensions::StepQuestions)
     PizzaOrderQuestion.clear_all
+    OriginalMessageQuestion.clear_all
   end
 
   context '#clear_all' do
@@ -170,6 +189,23 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
         send_message('hoge', privately: true)
         is_expected.to include 'OK. Done all questions'
       end
+    end
+  end
+
+  context 'question has original messages' do
+    before do
+      send_command('message')
+    end
+
+    it 'start with original message' do
+      expect(replies.first).to eq 'It is start message'
+      expect(replies.last).to eq 'One:'
+    end
+
+    it 'finish with original message' do
+      send_message('one')
+      send_message('two')
+      expect(replies.last).to eq 'It is finish message'
     end
   end
 end
