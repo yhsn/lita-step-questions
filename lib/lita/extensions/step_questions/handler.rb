@@ -11,6 +11,8 @@ module Lita
           end
           true
         end
+
+        Lita.register_handler(Handler)
       end
     end
   end

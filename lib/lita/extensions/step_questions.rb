@@ -6,7 +6,6 @@ module Lita
         extensions = payload[:route].extensions
         if extensions.size > 0 && extensions.keys.include?(:multi_question)
           extensions[:multi_question].new(-1, message).start
-          Lita.register_handler(Handler)
         end
 
         true
