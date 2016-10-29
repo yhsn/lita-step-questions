@@ -44,8 +44,21 @@ module Lita
           named_redis.set([@user.id, 'index'].join(':'), -1)
         end
 
-        def add_answer(response)
+        def wait_abort_confirmation(response)
+          response.reply "Really?(yes/no)"
+          named_redis.set([@user.id, 'aborting'].join(':'), true)
+        end
+
+        def receive_answer(response)
+          return false if aborting?
+
           body = response.message.body
+
+          if body == 'abort'
+            wait_abort_confirmation(response)
+            return false
+          end
+
           @current_answer = if current_step[:multi_line] && body == 'done'
                               # "done" is keyword to finish muti-line question. Not append to answer.
                               named_redis.get([@user.id, 'multiline_answer'].join(':'))
@@ -132,10 +145,34 @@ module Lita
           'OK. Done all questions'
         end
 
-        private
-          def named_redis
-            @named_redis ||= Redis::Namespace.new("#{Lita.redis.namespace}:step-questions", redis: Redis.new)
+        def aborting?
+          named_redis.get([@user.id, 'aborting'].join(':')) != nil
+        end
+
+        def confirm_abort(response)
+          if response.message.body == 'yes'
+            response.message.reply 'OK. Questions aborted'
+          elsif response.message.body == 'no'
+            response.message.reply 'OK. Continue questions'
+            named_redis.del([@user.id, 'aborting'].join(':'))
+            @message.reply "#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
+          else
+            # require yes or no again
+            wait_abort_confirmation(response)
+            return nil
           end
+
+          named_redis.set([@user.id, 'aborting'].join(':'), false)
+        end
+
+        def abort!
+          named_redis.del [@user.id, 'index'].join(':')
+          named_redis.del [@user.id, 'question_class'].join(':')
+        end
+
+        def named_redis
+          @named_redis ||= Redis::Namespace.new("#{Lita.redis.namespace}:step-questions", redis: Redis.new)
+        end
       end
     end
   end
