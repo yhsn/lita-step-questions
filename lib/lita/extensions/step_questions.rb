@@ -2,10 +2,12 @@ module Lita
   module Extensions
     class StepQuestions
       def self.call(payload)
-        message = payload[:message]
+        message    = payload[:message]
         extensions = payload[:route].extensions
+
         if extensions.size > 0 && extensions.keys.include?(:multi_question)
-          extensions[:multi_question].new(-1, message).start
+          question_instance = extensions[:multi_question].new(-1, message)
+          question_instance.start
         end
 
         true
