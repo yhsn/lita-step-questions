@@ -199,7 +199,7 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
 
     it 'start with original message' do
       expect(replies.first).to eq 'It is start message'
-      expect(replies.last).to eq 'One:'
+      expect(replies.last).to eq '(1/2)One:'
     end
 
     it 'finish with original message' do
