@@ -69,7 +69,7 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       end
 
       it 'say start message after description' do
-        expect(replies.last).to eq 'your name:'
+        expect(replies.last).to eq '(1/5)your name:'
       end
     end
   end
@@ -92,7 +92,7 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       before { send_message('john doe', privately: true) }
 
       it 'do next question by capitalized step name if label not specified' do
-        is_expected.to eq 'Address:'
+        is_expected.to eq '(2/5)Address:'
       end
 
       it 'say label and recieved answer' do
@@ -106,7 +106,7 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       end
 
       it 'question by label and options' do
-        is_expected.to eq 'Pizza kind(in tomato teriyaki ebi-mayo):'
+        is_expected.to eq '(3/5)Pizza kind(in tomato teriyaki ebi-mayo):'
       end
 
       it 'accept answer in options and continue' do
@@ -132,7 +132,7 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       end
 
       it 'question with answer example' do
-        is_expected.to eq 'Phone number(example: 00012345678):'
+        is_expected.to eq '(4/5)Phone number(example: 00012345678):'
       end
 
       it 'accept valid answer' do
@@ -158,7 +158,7 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       end
 
       it 'start question with question and description for multi message question' do
-        is_expected.to eq 'Comment(multi message accepted. Finish by say "done"):'
+        is_expected.to eq '(5/5)Comment(multi message accepted. Finish by say "done"):'
       end
 
       it 'accept multi message answer' do
