@@ -37,9 +37,13 @@ module Lita
           @user = message.user
         end
 
+        def reply_question(num = false)
+          @message.reply "(#{ num || @index + 1 }/#{ self.class.steps.count })#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
+        end
+
         def start
           @message.reply self.start_message
-          @message.reply self.class.steps.first[:label] + ':'
+          reply_question(1)
           named_redis.set([@user.id, 'question_class'].join(':'), self.class.name)
           named_redis.set([@user.id, 'index'].join(':'), -1)
         end
@@ -101,7 +105,7 @@ module Lita
           @index += 1
           return false if self.class.steps.size <= @index
           named_redis.set([@user.id, 'index'].join(':'), @index)
-          @message.reply "#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
+          reply_question
         end
 
         def current_label
