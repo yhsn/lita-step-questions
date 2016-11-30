@@ -20,8 +20,8 @@ module Lita
               @steps
             end
 
-            def continue(index, response)
-              self.new(index, response)
+            def continue(index, message)
+              self.new(index, message)
             end
           end
 
@@ -48,18 +48,18 @@ module Lita
           named_redis.set([@user.id, 'index'].join(':'), -1)
         end
 
-        def wait_abort_confirmation(response)
-          response.reply "Really?(yes/no)"
+        def wait_abort_confirmation
+          @message.reply "Really?(yes/no)"
           named_redis.set([@user.id, 'aborting'].join(':'), true)
         end
 
-        def receive_answer(response)
+        def receive_answer
           return false if aborting?
 
-          body = response.message.body
+          body = @message.body
 
           if body == 'abort'
-            wait_abort_confirmation(response)
+            wait_abort_confirmation
             return false
           end
 
@@ -71,16 +71,16 @@ module Lita
                               temp = named_redis.get([@user.id, 'multiline_answer'].join(':'))
                               (temp ? temp + "\n" + body : body)
                             else
-                              response.message.body
+                              @message.body
                             end
 
           if current_step[:validate] && not(current_step[:validate] =~ @current_answer)
-            response.reply "NG. Please answer like this: #{current_step[:example]}"
+            @message.reply "NG. Please answer like this: #{current_step[:example]}"
             return false
           end
 
           if current_step[:options] && not(current_step[:options].include? @current_answer)
-            response.reply "NG. Please answer in options (#{current_step[:options].join(' ')})"
+            @message.reply "NG. Please answer in options (#{current_step[:options].join(' ')})"
             return false
           end
 
@@ -89,14 +89,14 @@ module Lita
             return true
           end
 
-          response.reply "OK. #{ self.class.steps[@index][:label] }: #{ "\n" if current_step[:multi_line] }#{ @current_answer }"
+          @message.reply "OK. #{ self.class.steps[@index][:label] }: #{ "\n" if current_step[:multi_line] }#{ @current_answer }"
           if current_step[:multi_line] && body == 'done'
             named_redis.del([@user.id, 'multiline_answer'].join(':'))
           end
           save(@current_answer)
 
           if self.class.steps.size == (@index + 1)
-            response.reply self.finish_message
+            @message.reply self.finish_message
           end
           true
         end
@@ -153,16 +153,16 @@ module Lita
           named_redis.get([@user.id, 'aborting'].join(':')) != nil
         end
 
-        def confirm_abort(response)
-          if response.message.body == 'yes'
-            response.message.reply 'OK. Questions aborted'
-          elsif response.message.body == 'no'
-            response.message.reply 'OK. Continue questions'
+        def confirm_abort
+          if @message.body == 'yes'
+            @message.reply 'OK. Questions aborted'
+          elsif @message.body == 'no'
+            @message.reply 'OK. Continue questions'
             named_redis.del([@user.id, 'aborting'].join(':'))
             @message.reply "#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
           else
             # require yes or no again
-            wait_abort_confirmation(response)
+            wait_abort_confirmation
             return nil
           end
 

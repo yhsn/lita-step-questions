@@ -5,12 +5,13 @@ module Lita
         route(/^.*$/, :all)
 
         def all(response)
-          question = Lita::Extensions::StepQuestions.current(response)
+          m = response.message
+          question = Lita::Extensions::StepQuestions.current m
           return true unless question
-          if question.receive_answer(response)
+          if question.receive_answer
             question.next
           elsif question.aborting?
-            question.confirm_abort(response)
+            question.confirm_abort
             return true
           end
           true
