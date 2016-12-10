@@ -168,11 +168,6 @@ module Lita
           named_redis.set([@user.id, 'aborting'].join(':'), false)
         end
 
-        def abort!
-          named_redis.del [@user.id, 'index'].join(':')
-          named_redis.del [@user.id, 'question_class'].join(':')
-        end
-
         def named_redis
           @named_redis ||= self.class.named_redis
         end
