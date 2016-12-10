@@ -26,8 +26,11 @@ module Lita
           end
 
           def clear_all
-            named_redis = Redis::Namespace.new("#{Lita.redis.namespace}:step-questions", redis: Redis.new)
             named_redis.del '*'
+          end
+
+          def named_redis
+            ::Lita::Extensions::StepQuestions::NamedRedis.new
           end
         end
 
@@ -54,7 +57,7 @@ module Lita
         end
 
         def receive_answer
-          return false if aborting?
+          return false if named_redis.aborting?(@message.user.id)
 
           body = @message.body
 
@@ -149,10 +152,6 @@ module Lita
           'OK. Done all questions'
         end
 
-        def aborting?
-          named_redis.get([@user.id, 'aborting'].join(':')) != nil
-        end
-
         def confirm_abort
           if @message.body == 'yes'
             @message.reply 'OK. Questions aborted'
@@ -175,7 +174,11 @@ module Lita
         end
 
         def named_redis
-          @named_redis ||= Redis::Namespace.new("#{Lita.redis.namespace}:step-questions", redis: Redis.new)
+          @named_redis ||= self.class.named_redis
+        end
+
+        def aborting?
+          named_redis.aborting? @message.user.id
         end
       end
     end
