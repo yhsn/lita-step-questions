@@ -25,19 +25,21 @@ module Lita
             end
           end
 
-          def clear_all
-            named_redis.del '*'
+          def clear_all(user_id)
+            raise "user id is required!!" if user_id == nil
+            named_redis(user_id).del '*'
           end
 
-          def named_redis
-            ::Lita::Extensions::StepQuestions::NamedRedis.new
+          def named_redis(user_id)
+            ::Lita::Extensions::StepQuestions::NamedRedis.new(user_id)
           end
         end
 
         def initialize(index, message)
-          @index = index.to_i
-          @message = message
-          @user = message.user
+          @index      = index.to_i
+          @message    = message
+          @user       = message.user
+          @named_redis = self.class.named_redis @user.id
         end
 
         def reply_question(num = false)
@@ -47,17 +49,17 @@ module Lita
         def start
           @message.reply self.start_message
           reply_question(1)
-          named_redis.set([@user.id, 'question_class'].join(':'), self.class.name)
-          named_redis.set([@user.id, 'index'].join(':'), -1)
+          @named_redis.set('question_class', self.class.name)
+          @named_redis.set('index', -1)
         end
 
         def wait_abort_confirmation
           @message.reply "Really?(yes/no)"
-          named_redis.set([@user.id, 'aborting'].join(':'), true)
+          @named_redis.set('aborting', true)
         end
 
         def receive_answer
-          return false if named_redis.aborting?(@message.user.id)
+          return false if @named_redis.aborting?
 
           body = @message.body
 
@@ -68,10 +70,10 @@ module Lita
 
           @current_answer = if current_step[:multi_line] && body == 'done'
                               # "done" is keyword to finish muti-line question. Not append to answer.
-                              named_redis.get([@user.id, 'multiline_answer'].join(':'))
+                              @named_redis.get('multiline_answer')
                             elsif current_step[:multi_line] && body != 'done'
                               # Multi line answer saved in Redis temporary
-                              temp = named_redis.get([@user.id, 'multiline_answer'].join(':'))
+                              temp = @named_redis.get('multiline_answer')
                               (temp ? temp + "\n" + body : body)
                             else
                               @message.body
@@ -88,13 +90,13 @@ module Lita
           end
 
           if current_step[:multi_line] && body != 'done'
-            named_redis.set([@user.id, 'multiline_answer'].join(':'), @current_answer)
+            @named_redis.set('multiline_answer', @current_answer)
             return true
           end
 
           @message.reply "OK. #{ self.class.steps[@index][:label] }: #{ "\n" if current_step[:multi_line] }#{ @current_answer }"
           if current_step[:multi_line] && body == 'done'
-            named_redis.del([@user.id, 'multiline_answer'].join(':'))
+            @named_redis.del('multiline_answer')
           end
           save(@current_answer)
 
@@ -107,7 +109,7 @@ module Lita
         def next
           @index += 1
           return false if self.class.steps.size <= @index
-          named_redis.set([@user.id, 'index'].join(':'), @index)
+          @named_redis.set('index', @index)
           reply_question
         end
 
@@ -157,7 +159,7 @@ module Lita
             @message.reply 'OK. Questions aborted'
           elsif @message.body == 'no'
             @message.reply 'OK. Continue questions'
-            named_redis.del([@user.id, 'aborting'].join(':'))
+            @named_redis.del('aborting')
             @message.reply "#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
           else
             # require yes or no again
@@ -165,15 +167,11 @@ module Lita
             return nil
           end
 
-          named_redis.set([@user.id, 'aborting'].join(':'), false)
-        end
-
-        def named_redis
-          @named_redis ||= self.class.named_redis
+          @named_redis.set('aborting', false)
         end
 
         def aborting?
-          named_redis.aborting? @message.user.id
+          @named_redis.aborting?
         end
       end
     end

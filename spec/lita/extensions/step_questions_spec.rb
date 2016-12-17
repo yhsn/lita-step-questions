@@ -43,14 +43,8 @@ end
 describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
   before do
     registry.register_hook(:validate_route, Lita::Extensions::StepQuestions)
-    PizzaOrderQuestion.clear_all
-    OriginalMessageQuestion.clear_all
-  end
-
-  context '#clear_all' do
-    it 'clear all redis entry' do
-      expect(Lita.redis.keys).to eq []
-    end
+    PizzaOrderQuestion.clear_all(user.id)
+    OriginalMessageQuestion.clear_all(user.id)
   end
 
   context 'route not have multi question' do
