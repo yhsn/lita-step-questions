@@ -65,6 +65,14 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       it 'say start message after description' do
         expect(replies.last).to eq '(1/5)your name:'
       end
+
+      it 'do not get answer' do
+        expect(replies).not_to include /OK/
+      end
+
+      it 'reply question once' do
+        expect(replies.select{ |r| /your name/ === r }.count).to eq 1
+      end
     end
   end
 

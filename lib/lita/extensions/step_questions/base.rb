@@ -48,7 +48,6 @@ module Lita
 
         def start
           @message.reply self.start_message
-          reply_question(1)
           @named_redis.set('question_class', self.class.name)
           @named_redis.set('index', -1)
         end
@@ -94,7 +93,9 @@ module Lita
             return true
           end
 
-          @message.reply "OK. #{ self.class.steps[@index][:label] }: #{ "\n" if current_step[:multi_line] }#{ @current_answer }"
+          if @index > -1
+            @message.reply "OK. #{ self.class.steps[@index][:label] }: #{ "\n" if current_step[:multi_line] }#{ @current_answer }"
+          end
           if current_step[:multi_line] && body == 'done'
             @named_redis.del('multiline_answer')
           end
