@@ -1,45 +1,5 @@
 require "spec_helper"
 
-class PizzaOrderQuestion < Lita::Extensions::StepQuestions::Base
-  step :name, label: 'your name'
-  step :address
-  step :pizza_kind, options: %w(tomato teriyaki ebi-mayo)
-  step :phone_number, validate: /^[0-9]{11}$/, example: '00012345678'
-  step :comment, multi_line: true
-end
-
-class OriginalMessageQuestion < Lita::Extensions::StepQuestions::Base
-  step :one
-  step :two
-
-  def start_message
-    'It is start message'
-  end
-
-  def finish_message
-    'It is finish message'
-  end
-end
-
-class PizzaOrderHandler < Lita::Handler
-  route(/^order$/, :order, command: true, multi_question: PizzaOrderQuestion)
-  route(/^menu$/, :menu, command: true)
-  route(/^message$/, :message, command: true, multi_question: OriginalMessageQuestion)
-
-  def menu(response)
-    menus = "tomato teriyaki ebi-mayo"
-    response.reply menus
-  end
-
-  def order(response)
-    # nothing
-  end
-
-  def message(response)
-    # nothing
-  end
-end
-
 describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
   before do
     registry.register_hook(:validate_route, Lita::Extensions::StepQuestions)
@@ -208,35 +168,6 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       send_message('one')
       send_message('two')
       expect(replies.last).to eq 'It is finish message'
-    end
-  end
-
-  context 'abort question' do
-    before do
-      send_command('order')
-      send_message('abort')
-    end
-
-    it 'start by say "abort"' do
-      expect(replies.last).to eq 'Really?(yes/no)'
-    end
-
-    context 'finish question by confirm "yes"' do
-      before { send_message('yes') }
-
-      it { expect(replies.last).to eq 'OK. Questions aborted' }
-    end
-
-    context 'not finish question by answer "no"' do
-      before { send_message('no') }
-
-      it 'reply not aborting question' do
-        expect(replies[-2]).to eq 'OK. Continue questions'
-      end
-
-      it 'repeat current question' do
-        expect(replies.last).to eq 'your name:'
-      end
     end
   end
 end
