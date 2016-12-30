@@ -7,7 +7,7 @@ module Lita
         end
 
         def aborting?
-          @redis.get('aborting') != nil
+          @redis.get('aborting') == 'true'
         end
 
         def del(args)

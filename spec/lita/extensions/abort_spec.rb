@@ -35,4 +35,17 @@ describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::
       end
     end
   end
+
+  context 'normal response after abort question' do
+    before do
+      send_command('order')
+      send_message('abort')
+      send_message('yes')
+    end
+
+    it 'not repleat abort confirmation' do
+      send_command('order')
+      expect(replies.last).not_to eq 'Really?(yes/no)'
+    end
+  end
 end
