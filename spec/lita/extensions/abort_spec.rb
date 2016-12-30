@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe PizzaOrderHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
+describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
   before do
     registry.register_hook(:validate_route, Lita::Extensions::StepQuestions)
     PizzaOrderQuestion.clear_all(user.id)
