@@ -6,14 +6,21 @@ describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Exte
     LastSelectQuestion.clear_all(user.id)
   end
 
-  context 'finish question' do
+  context 'finish questions has select question at last' do
     before do
-      send_command('order')
-      send_message('abort')
+      send_command('last_select')
+      send_message('a')
+      send_message('hoge')
     end
 
-    it 'start by say "abort"' do
-      expect(replies.last).to eq 'Really?(yes/no)'
+    it 'finish by all questions done' do
+      expect(replies.last).to include 'OK. Done all questions'
+    end
+
+    it 'not continue question after questions finished' do
+      count_at_finished = replies.size
+      send_message('hoge')
+      expect(count_at_finished).to eq replies.size
     end
   end
 end

@@ -6,12 +6,15 @@ module Lita
 
         def all(response)
           m = response.message
-          question = Lita::Extensions::StepQuestions.current m
-          return true unless question
-          if question.receive_answer
-            question.next
-          elsif question.aborting?
-            question.confirm_abort
+          q = Lita::Extensions::StepQuestions.current m
+
+          return true unless q
+
+          if q.receive_answer
+            q.finish unless q.next
+          elsif q.aborting?
+            q.confirm_abort
+
             return true
           end
           true
