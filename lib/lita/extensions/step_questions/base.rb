@@ -56,6 +56,10 @@ module Lita
           @named_redis.set('aborting', true)
         end
 
+        def done?
+          @message.body == 'done'
+        end
+
         # return true: finish one question
         # return false: answer not acceptablle, or continue current question.
         def receive_answer
@@ -72,7 +76,7 @@ module Lita
           validate = current_step[:validate]
           options  = current_step[:options]
 
-          if multiline_answer && body != 'done'
+          if multiline_answer && !done?
             stored = @named_redis.get('multi_line')
 
             merged = if !stored.nil? && stored != ''
@@ -86,7 +90,7 @@ module Lita
             return false
           end
 
-          @current_answer = if multiline_answer && body == 'done'
+          @current_answer = if multiline_answer && done?
                               @named_redis.get('multi_line')
                             else
                               body
