@@ -4,7 +4,8 @@ require "pry"
 
 require './spec/lita/extensions/pizza_order_question.rb'
 require './spec/lita/extensions/original_message_question.rb'
-require './spec/lita/extensions/pizza_order_handler.rb'
+require './spec/lita/extensions/last_select_question.rb'
+require './spec/lita/extensions/sample_handler.rb'
 
 # A compatibility mode is provided for older plugins upgrading from Lita 3. Since this plugin
 # was generated with Lita 4, the compatibility mode should be left disabled.

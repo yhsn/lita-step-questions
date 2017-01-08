@@ -5,7 +5,7 @@ module Lita
         attr_accessor :index
 
         class << self
-          def step(name, label: name.to_s.gsub('_', ' ').capitalize, validate: false, multi_line: false, example: false, options: false)
+          def step(name, label: name.to_s.tr('_', ' ').capitalize, validate: nil, multi_line: nil, example: nil, options: nil)
             @steps ||= []
             @steps << {
               name:       name,
@@ -13,21 +13,21 @@ module Lita
               validate:   validate,
               multi_line: multi_line,
               example:    example,
-              options:    options,
+              options:    options
             }
+          end
 
-            def steps
-              @steps
-            end
+          attr_reader :steps
 
-            def continue(index, message)
-              self.new(index, message)
-            end
+          def continue(index, message)
+            new(index, message)
           end
 
           def clear_all(user_id)
-            raise "user id is required!!" if user_id == nil
-            named_redis(user_id).del '*'
+            nr = named_redis(user_id)
+            ks = nr.keys '*'
+
+            ks.each { |k| nr.del k }
           end
 
           def named_redis(user_id)
@@ -36,27 +36,32 @@ module Lita
         end
 
         def initialize(index, message)
-          @index      = index.to_i
-          @message    = message
-          @user       = message.user
-          @named_redis = self.class.named_redis @user.id
+          @index       = index.to_i
+          @message     = message
+          @named_redis = self.class.named_redis @message.user.id
         end
 
-        def reply_question(num = false)
-          @message.reply "(#{ num || @index + 1 }/#{ self.class.steps.count })#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
+        def reply_question(num)
+          @message.reply "(#{num + 1}/#{self.class.steps.count})#{current_label}#{!additional_note.empty? ? "(#{additional_note})" : nil}:"
         end
 
         def start
-          @message.reply self.start_message
+          @message.reply start_message
           @named_redis.set('question_class', self.class.name)
           @named_redis.set('index', -1)
         end
 
         def wait_abort_confirmation
-          @message.reply "Really?(yes/no)"
+          @message.reply 'Really?(yes/no)'
           @named_redis.set('aborting', true)
         end
 
+        def done?
+          @message.body == 'done'
+        end
+
+        # return true: finish one question
+        # return false: answer not acceptablle, or continue current question.
         def receive_answer
           return false if @named_redis.aborting?
 
@@ -67,43 +72,52 @@ module Lita
             return false
           end
 
-          @current_answer = if current_step[:multi_line] && body == 'done'
-                              # "done" is keyword to finish muti-line question. Not append to answer.
-                              @named_redis.get('multiline_answer')
-                            elsif current_step[:multi_line] && body != 'done'
-                              # Multi line answer saved in Redis temporary
-                              temp = @named_redis.get('multiline_answer')
-                              (temp ? temp + "\n" + body : body)
+          multiline_answer = current_step[:multi_line]
+          validate = current_step[:validate]
+          options  = current_step[:options]
+
+          if multiline_answer && !done?
+            stored = @named_redis.get('multi_line')
+
+            merged = if !stored.nil? && stored != ''
+                       stored + "\n" + body
+                     else
+                       body
+                     end
+
+            @named_redis.set('multi_line', merged)
+
+            return false
+          end
+
+          @current_answer = if multiline_answer && done?
+                              @named_redis.get('multi_line')
                             else
-                              @message.body
+                              body
                             end
 
-          if current_step[:validate] && not(current_step[:validate] =~ @current_answer)
+          if validate && !((validate =~ @current_answer))
             @message.reply "NG. Please answer like this: #{current_step[:example]}"
             return false
           end
 
-          if current_step[:options] && not(current_step[:options].include? @current_answer)
-            @message.reply "NG. Please answer in options (#{current_step[:options].join(' ')})"
+          if options && !options.include?(@current_answer)
+            @message.reply "NG. Please answer in options (#{options.join(' ')})"
             return false
           end
 
-          if current_step[:multi_line] && body != 'done'
-            @named_redis.set('multiline_answer', @current_answer)
-            return true
+          if @index > -1
+            @message.reply "OK. #{current_step[:label]}: #{"\n" if current_step[:multi_line]}#{@current_answer}"
           end
 
-          if @index > -1
-            @message.reply "OK. #{ self.class.steps[@index][:label] }: #{ "\n" if current_step[:multi_line] }#{ @current_answer }"
+          if multiline_answer && body == 'done'
+            @named_redis.del('multi_line')
           end
-          if current_step[:multi_line] && body == 'done'
-            @named_redis.del('multiline_answer')
-          end
+
           save(@current_answer)
 
-          if self.class.steps.size == (@index + 1)
-            @message.reply self.finish_message
-          end
+          @message.reply finish_message if self.class.steps.size == (@index + 1)
+
           true
         end
 
@@ -111,7 +125,7 @@ module Lita
           @index += 1
           return false if self.class.steps.size <= @index
           @named_redis.set('index', @index)
-          reply_question
+          reply_question @index
         end
 
         def current_label
@@ -123,20 +137,21 @@ module Lita
           self.class.steps[(@index < 0 ? 0 : @index)]
         end
 
-        def current_answer
-          @current_answer
-        end
+        attr_reader :current_answer
 
         def additional_note
-          note = ""
+          note = ''
+          step = current_step
 
-          if options = current_step[:options]
+          if options = step[:options]
             note << 'in ' + options.join(' ')
           end
-          if options = current_step[:example]
-            note << 'example: ' + current_step[:example]
+
+          if example = step[:example]
+            note << 'example: ' + example
           end
-          if options = current_step[:multi_line]
+
+          if step[:multi_line]
             note << 'multi message accepted. Finish by say "done"'
           end
 
@@ -156,12 +171,14 @@ module Lita
         end
 
         def confirm_abort
-          if @message.body == 'yes'
+          body = @message.body
+
+          if body == 'yes'
             @message.reply 'OK. Questions aborted'
-          elsif @message.body == 'no'
+          elsif body == 'no'
             @message.reply 'OK. Continue questions'
             @named_redis.del('aborting')
-            @message.reply "#{ current_label }#{ additional_note.size > 0 ? "(#{ additional_note })" : nil }:"
+            @message.reply "#{current_label}#{!additional_note.empty? ? "(#{additional_note})" : nil}:"
           else
             # require yes or no again
             wait_abort_confirmation
@@ -173,6 +190,10 @@ module Lita
 
         def aborting?
           @named_redis.aborting?
+        end
+
+        def finish
+          self.class.clear_all @message.user.id
         end
       end
     end
