@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "lita-step-questions"
-  spec.version       = "0.2.5"
+  spec.version       = "0.2.6"
   spec.authors       = ["yhsn"]
   spec.email         = ["yhsn@example.com"]
   spec.description   = "step question extension"
@@ -20,4 +20,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rack-test"
   spec.add_development_dependency "rspec", ">= 3.0.0"
+  spec.add_development_dependency "rubycritic"
 end
