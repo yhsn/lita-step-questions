@@ -21,6 +21,10 @@ module Lita
         def get(key)
           @redis.get key
         end
+
+        def keys(term)
+          @redis.keys term
+        end
       end
     end
   end
