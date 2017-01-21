@@ -121,11 +121,12 @@ module Lita
           true
         end
 
-        def next
+        def next!
           @index += 1
           return false if self.class.steps.size <= @index
           @named_redis.set('index', @index)
           reply_question @index
+          true
         end
 
         def current_label

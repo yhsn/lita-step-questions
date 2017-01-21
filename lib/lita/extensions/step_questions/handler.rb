@@ -11,12 +11,11 @@ module Lita
           return true unless q
 
           if q.receive_answer
-            q.finish unless q.next
+            q.finish unless q.next!
           elsif q.aborting?
             q.confirm_abort
-
-            return true
           end
+
           true
         end
 
