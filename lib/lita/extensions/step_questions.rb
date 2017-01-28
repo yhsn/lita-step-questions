@@ -5,7 +5,7 @@ module Lita
         message    = payload[:message]
         extensions = payload[:route].extensions
 
-        if !extensions.empty? && extensions.keys.include?(:multi_question)
+        if !self.current(message) && !extensions.empty? && extensions.keys.include?(:multi_question)
           question_instance = extensions[:multi_question].new(-1, message)
           question_instance.start
         end
@@ -21,7 +21,10 @@ module Lita
       end
 
       def self.named_redis
-        @named_redis = Redis::Namespace.new("#{Lita.redis.namespace}:step-questions", redis: Redis.new)
+        @named_redis = Redis::Namespace.new(
+          "#{Lita.redis.namespace}:step-questions",
+          redis: Redis.new
+        )
       end
 
       Lita.register_hook(:validate_route, self)
