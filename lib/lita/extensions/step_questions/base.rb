@@ -60,6 +60,10 @@ module Lita
           @message.body == 'done'
         end
 
+        def abort?
+          @message.body == 'abort'
+        end
+
         # return true: finish one question
         # return false: answer not acceptablle, or continue current question.
         def receive_answer
@@ -67,7 +71,7 @@ module Lita
 
           body = @message.body
 
-          if body == 'abort'
+          if abort?
             wait_abort_confirmation
             return false
           end
