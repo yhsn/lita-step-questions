@@ -2,16 +2,18 @@ module Lita
   module Extensions
     class StepQuestions
       class Handler < Lita::Handler
-        route(/^.*$/, :all)
+        on :message_dispatched, :all
+        on :unhandled_message, :all
 
-        def all(response)
-          m = response.message
+        def all(payload)
+          m = payload[:message]
           q = Lita::Extensions::StepQuestions.current m
 
           return true unless q
 
           if q.receive_answer
             q.finish unless q.next!
+            return
           elsif q.aborting?
             q.confirm_abort
           end
