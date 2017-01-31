@@ -60,6 +60,20 @@ module Lita
           @message.body == 'done'
         end
 
+        def abort?
+          @message.body == 'abort'
+        end
+
+        def current_multiline_answer(body)
+          stored = @named_redis.get('multi_line')
+
+          if !stored.nil? && stored != ''
+            stored + "\n" + body
+          else
+            body
+          end
+        end
+
         # return true: finish one question
         # return false: answer not acceptablle, or continue current question.
         def receive_answer
@@ -67,30 +81,24 @@ module Lita
 
           body = @message.body
 
-          if body == 'abort'
+          if abort?
             wait_abort_confirmation
             return false
           end
 
-          multiline_answer = current_step[:multi_line]
+          is_multi_line = current_step[:multi_line]
           validate = current_step[:validate]
           options  = current_step[:options]
 
-          if multiline_answer && !done?
-            stored = @named_redis.get('multi_line')
-
-            merged = if !stored.nil? && stored != ''
-                       stored + "\n" + body
-                     else
-                       body
-                     end
+          if is_multi_line && !done?
+            merged = current_multiline_answer body
 
             @named_redis.set('multi_line', merged)
 
             return false
           end
 
-          @current_answer = if multiline_answer && done?
+          @current_answer = if is_multi_line && done?
                               @named_redis.get('multi_line')
                             else
                               body
@@ -107,12 +115,10 @@ module Lita
           end
 
           if @index > -1
-            @message.reply "OK. #{current_step[:label]}: #{"\n" if current_step[:multi_line]}#{@current_answer}"
+            @message.reply "OK. #{current_step[:label]}: #{"\n" if is_multi_line}#{@current_answer}"
           end
 
-          if multiline_answer && body == 'done'
-            @named_redis.del('multi_line')
-          end
+          @named_redis.del('multi_line') if is_multi_line && body == 'done'
 
           save(@current_answer)
 
@@ -121,11 +127,12 @@ module Lita
           true
         end
 
-        def next
+        def next!
           @index += 1
           return false if self.class.steps.size <= @index
           @named_redis.set('index', @index)
           reply_question @index
+          true
         end
 
         def current_label

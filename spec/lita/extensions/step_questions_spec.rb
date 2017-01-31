@@ -1,4 +1,4 @@
-require "spec_helper"
+require 'spec_helper'
 
 describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
   before do
@@ -9,14 +9,14 @@ describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Exte
 
   context 'route not have multi question' do
     it 'not start multi question' do
-      send_command("menu")
-      expect(replies.last).to eq "tomato teriyaki ebi-mayo"
+      send_command('menu')
+      expect(replies.last).to eq 'tomato teriyaki ebi-mayo'
     end
   end
 
   context 'route have multi question' do
     context 'start multi question' do
-      before { send_command("order") }
+      before { send_command('order') }
 
       it 'say default description first' do
         expect(replies.first).to eq 'This is multiple question. If you want to abort, just say "abort".'
@@ -31,14 +31,14 @@ describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Exte
       end
 
       it 'reply question once' do
-        expect(replies.select{ |r| /your name/ === r }.count).to eq 1
+        expect(replies.select { |r| /your name/ === r }.count).to eq 1
       end
     end
   end
 
   context 'continue questions' do
     subject { replies.last }
-    before { send_command("order") }
+    before { send_command('order') }
     let(:answers) do
       [
         'john doe',
@@ -46,7 +46,7 @@ describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Exte
         'tomato',
         '12312341234',
         'first line',
-        'second lie',
+        'second lie'
       ]
     end
 
