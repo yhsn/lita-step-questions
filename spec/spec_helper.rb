@@ -1,6 +1,6 @@
-require "lita-step-questions"
-require "lita/rspec"
-require "pry"
+require 'lita-step-questions'
+require 'lita/rspec'
+require 'pry'
 
 require './spec/lita/extensions/pizza_order_question.rb'
 require './spec/lita/extensions/original_message_question.rb'

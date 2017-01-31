@@ -5,7 +5,7 @@ module Lita
         message    = payload[:message]
         extensions = payload[:route].extensions
 
-        if !self.current(message) && !extensions.empty? && extensions.keys.include?(:multi_question)
+        if !current(message) && !extensions.empty? && extensions.keys.include?(:multi_question)
           question_instance = extensions[:multi_question].new(-1, message)
           question_instance.start
         end
