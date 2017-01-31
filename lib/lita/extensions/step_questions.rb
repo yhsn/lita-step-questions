@@ -1,5 +1,6 @@
 module Lita
   module Extensions
+    # entry point of StepQuestions
     class StepQuestions
       def self.call(payload)
         message    = payload[:message]
@@ -14,9 +15,10 @@ module Lita
       end
 
       def self.current(message)
-        klass = named_redis.get [message.user.id, 'question_class'].join(':')
-        index = named_redis.get [message.user.id, 'index'].join(':')
-        return false if klass.nil?
+        user_id = message.user.id
+        klass = named_redis.get [user_id, 'question_class'].join(':')
+        index = named_redis.get [user_id, 'index'].join(':')
+        return false unless klass
         Module.const_get(klass).continue(index, message)
       end
 
