@@ -1,4 +1,4 @@
-require "spec_helper"
+require 'spec_helper'
 
 describe SampleHandler, lita_handler: true, additional_lita_handlers: Lita::Extensions::StepQuestions::Handler do
   before do

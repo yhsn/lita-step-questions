@@ -5,7 +5,7 @@ class SampleHandler < Lita::Handler
   route(/^last_select$/, :message, command: true, multi_question: LastSelectQuestion)
 
   def menu(response)
-    menus = "tomato teriyaki ebi-mayo"
+    menus = 'tomato teriyaki ebi-mayo'
     response.reply menus
   end
 

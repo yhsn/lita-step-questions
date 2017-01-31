@@ -114,9 +114,7 @@ module Lita
             @message.reply "OK. #{current_step[:label]}: #{"\n" if current_step[:multi_line]}#{@current_answer}"
           end
 
-          if multiline_answer && body == 'done'
-            @named_redis.del('multi_line')
-          end
+          @named_redis.del('multi_line') if multiline_answer && body == 'done'
 
           save(@current_answer)
 
