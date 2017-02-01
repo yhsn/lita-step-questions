@@ -14,7 +14,7 @@ module Lita
 
           if q.receive_answer
             q.finish unless q.next!
-          elsif q.aborting?
+          elsif !q.abort? && q.aborting?
             q.confirm_abort
           end
 
