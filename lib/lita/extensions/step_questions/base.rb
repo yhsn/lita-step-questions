@@ -1,10 +1,18 @@
+require 'active_support'
+require 'active_support/core_ext/object/blank'
+
 module Lita
   module Extensions
     class StepQuestions
+      # Base class of Step questions
+      # have multiple steps
+      # ex: Pizza order, customer name, pizza name, address, topping ...
       class Base
-        attr_accessor :index
+        attr_reader :index, :current_answer
 
         class << self
+          attr_reader :steps
+
           def step(name, label: name.to_s.tr('_', ' ').capitalize, validate: nil, multi_line: nil, example: nil, options: nil)
             @steps ||= []
             @steps << {
@@ -17,17 +25,16 @@ module Lita
             }
           end
 
-          attr_reader :steps
-
           def continue(index, message)
             new(index, message)
           end
 
           def clear_all(user_id)
-            nr = named_redis(user_id)
-            ks = nr.keys '*'
+            # nr = named_redis(user_id)
+            # ks = nr.keys '*'
 
-            ks.each { |k| nr.del k }
+            # ks.each { |k| nr.del k }
+            named_redis(user_id).clear_all
           end
 
           def named_redis(user_id)
@@ -42,7 +49,7 @@ module Lita
         end
 
         def reply_question(num)
-          @message.reply "(#{num + 1}/#{self.class.steps.count})#{current_label}#{!additional_note.empty? ? "(#{additional_note})" : nil}:"
+          @message.reply "(#{num + 1}/#{self.class.steps.count})#{current_label}#{!additional_note.blank? ? "(#{additional_note})" : nil}:"
         end
 
         def start
@@ -98,29 +105,29 @@ module Lita
             return false
           end
 
-          @current_answer = if is_multi_line && done?
+          current_answer = if is_multi_line && done?
                               @named_redis.get('multi_line')
                             else
                               body
                             end
 
-          if validate && !((validate =~ @current_answer))
+          if validate && !((validate =~ current_answer))
             @message.reply "NG. Please answer like this: #{current_step[:example]}"
             return false
           end
 
-          if options && !options.include?(@current_answer)
+          if options && !options.include?(current_answer)
             @message.reply "NG. Please answer in options (#{options.join(' ')})"
             return false
           end
 
           if @index > -1
-            @message.reply "OK. #{current_step[:label]}: #{"\n" if is_multi_line}#{@current_answer}"
+            @message.reply "OK. #{current_step[:label]}: #{"\n" if is_multi_line}#{current_answer}"
           end
 
           @named_redis.del('multi_line') if is_multi_line && body == 'done'
 
-          save(@current_answer)
+          save(current_answer)
 
           @message.reply finish_message if self.class.steps.size == (@index + 1)
 
@@ -144,25 +151,12 @@ module Lita
           self.class.steps[(@index < 0 ? 0 : @index)]
         end
 
-        attr_reader :current_answer
-
         def additional_note
-          note = ''
-          step = current_step
+          @options, @example, @multi_line =
+            current_step.slice(:options, :example, :multi_line).values
 
-          if options = step[:options]
-            note << 'in ' + options.join(' ')
-          end
-
-          if example = step[:example]
-            note << 'example: ' + example
-          end
-
-          if step[:multi_line]
-            note << 'multi message accepted. Finish by say "done"'
-          end
-
-          note
+          erb = File.read('./lib/lita/extensions/step_questions/note.erb')
+          ERB.new(erb, nil, '-').result(binding).chomp
         end
 
         def save(data)
