@@ -1,0 +1,9 @@
+<%- if @options -%>
+in <%= @options.join(' ') %>
+<%- end -%>
+<%- if @example -%>
+example: <%= @example %>
+<%- end -%>
+<%- if @multi_line -%>
+multi message accepted. Finish by say "done"
+<%- end -%>

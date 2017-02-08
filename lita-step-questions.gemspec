@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = 'lita-step-questions'
-  spec.version       = '0.2.8'
+  spec.version       = '0.2.9'
   spec.authors       = ['yhsn']
   spec.email         = ['yhsn@example.com']
   spec.description   = 'step question extension'
@@ -14,6 +14,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_runtime_dependency 'lita', '>= 4.7'
+  spec.add_runtime_dependency 'activesupport'
 
   spec.add_development_dependency 'bundler', '~> 1.3'
   spec.add_development_dependency 'pry-byebug'

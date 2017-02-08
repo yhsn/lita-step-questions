@@ -1,6 +1,7 @@
 module Lita
   module Extensions
     class StepQuestions
+      # redis wrapper with namespace
       class NamedRedis
         def initialize(user_id)
           @redis = ::Redis::Namespace.new("#{Lita.redis.namespace}:step-questions:#{user_id}", redis: Redis.new)
@@ -24,6 +25,10 @@ module Lita
 
         def keys(term)
           @redis.keys term
+        end
+
+        def clear_all
+          keys('*').each { |key| del(key) }
         end
       end
     end
