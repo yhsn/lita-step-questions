@@ -155,7 +155,7 @@ module Lita
           @options, @example, @multi_line =
             current_step.slice(:options, :example, :multi_line).values
 
-          erb = File.read('./lib/lita/extensions/step_questions/note.erb')
+          erb = File.read(File.expand_path('./note.erb', __dir__))
           ERB.new(erb, nil, '-').result(binding).chomp
         end
 
