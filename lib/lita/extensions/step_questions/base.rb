@@ -155,7 +155,7 @@ module Lita
           @options, @example, @multi_line =
             current_step.slice(:options, :example, :multi_line).values
 
-          erb = File.read('./lib/lita/extensions/step_questions/note.erb')
+          erb = File.read(File.expand_path('./note.erb', __dir__))
           ERB.new(erb, nil, '-').result(binding).chomp
         end
 
@@ -176,6 +176,8 @@ module Lita
 
           if body == 'yes'
             @message.reply 'OK. Questions aborted'
+            @named_redis.del('aborting')
+            finish
           elsif body == 'no'
             @message.reply 'OK. Continue questions'
             @named_redis.del('aborting')
@@ -183,10 +185,8 @@ module Lita
           else
             # require yes or no again
             wait_abort_confirmation
-            return nil
           end
 
-          @named_redis.set('aborting', false)
         end
 
         def aborting?
