@@ -176,6 +176,8 @@ module Lita
 
           if body == 'yes'
             @message.reply 'OK. Questions aborted'
+            @named_redis.del('aborting')
+            finish
           elsif body == 'no'
             @message.reply 'OK. Continue questions'
             @named_redis.del('aborting')
@@ -183,10 +185,8 @@ module Lita
           else
             # require yes or no again
             wait_abort_confirmation
-            return nil
           end
 
-          @named_redis.set('aborting', false)
         end
 
         def aborting?
