@@ -8,7 +8,7 @@ module Lita
       # have multiple steps
       # ex: Pizza order, customer name, pizza name, address, topping ...
       class Base
-        attr_reader :index, :current_answer
+        attr_reader :index, :current_answer, :named_redis
 
         class << self
           attr_reader :steps
