@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = 'lita-step-questions'
-  spec.version       = '0.2.10'
+  spec.version       = '0.2.11'
   spec.authors       = ['yhsn']
   spec.email         = ['yhsn@example.com']
   spec.description   = 'step question extension'
